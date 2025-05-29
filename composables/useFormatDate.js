@@ -1,6 +1,7 @@
 export function useFormatDate() {
   const formatDate = (date) => {
     const now = new Date()
+    if (typeof date !== "object") date = new Date(date);
     const diff = now - date
 
     if (diff < 86400000) {

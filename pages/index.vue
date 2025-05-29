@@ -50,6 +50,13 @@ import FeedListContainer from '~/components/FeedList/FeedListContainer.vue'
 
 const feedStore = useFeedStore()
 const uiStore = useUiStore()
+
+onMounted( () => {
+  feedStore.load();
+  setInterval(async () => {
+    await feedStore.refreshFeedItems();
+  }, 1000 * 60)
+})
 </script>
 
 <style scoped>

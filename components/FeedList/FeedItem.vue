@@ -8,7 +8,6 @@
       <div class="source-info">
         <div class="source-icon small" :class="item.sourceType">
           <rss v-if="item.sourceType === 'rss'" />
-          <message-circle v-else-if="item.sourceType === 'discord'" />
           <globe v-else />
         </div>
         <span class="source-name">{{ item.sourceName }}</span>
@@ -16,7 +15,7 @@
       <span class="item-date">{{ formatDate(item.date) }}</span>
     </div>
     <h3 class="item-title">{{ item.title }}</h3>
-    <p class="item-summary" v-html="sanitizeHtmlContent(item.summary)" />
+    <p class="item-summary"> </p>
     <div class="item-actions">
       <button class="action-btn" @click.stop="$emit('toggle-bookmark', item.id)">
         <bookmark v-if="!item.bookmarked" />
@@ -33,9 +32,8 @@
 </template>
 
 <script setup>
-import { Rss, MessageCircle, Globe, Bookmark, BookmarkCheck, Share, ExternalLink } from 'lucide-vue-next'
+import { Rss, Globe, Bookmark, BookmarkCheck, Share, ExternalLink } from 'lucide-vue-next'
 import { useFormatDate } from '~/composables/useFormatDate'
-import DOMPurify from 'dompurify';
 
 const props = defineProps({
   item: {
@@ -47,9 +45,6 @@ const props = defineProps({
 defineEmits(['view', 'toggle-bookmark', 'share', 'open-external'])
 
 const { formatDate } = useFormatDate()
-function sanitizeHtmlContent(content) {
-  return DOMPurify.sanitize(content);
-}
 </script>
 
 <style scoped>
@@ -60,7 +55,6 @@ function sanitizeHtmlContent(content) {
   padding: 1rem;
   cursor: pointer;
   transition: all 0.2s;
-  max-height: 230px;
 }
 
 .feed-item:hover {

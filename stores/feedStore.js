@@ -1,76 +1,28 @@
-import { defineStore } from 'pinia'
+import {defineStore} from 'pinia'
+
+function convertItemsFromXml(xmlDoc, source) {
+  let items = Array.from(xmlDoc.querySelectorAll("item")).map(item => ({
+    id: `${source.id}-${item.querySelector("guid")?.textContent || Date.now() + '-' + Math.random()}`,
+    sourceId: source.id,
+    sourceName: source.name,
+    sourceType: "rss",
+    title: item.querySelector("title")?.textContent || "",
+    summary: item.querySelector("description")?.textContent || "",
+    date: new Date(item.querySelector("pubDate")?.textContent || Date.now()),
+    read: false,
+    bookmarked: false,
+    link: item.querySelector("link")?.textContent || ""
+  }));
+  return items;
+}
 
 export const useFeedStore = defineStore('feed', {
   state: () => ({
     feedSources: [
-      { id: 'all', name: 'All Feeds', type: 'all', unread: 12 },
-      { id: 'tech', name: 'Tech News', type: 'rss', unread: 5 },
-      { id: 'dev', name: 'Dev Community', type: 'discord', unread: 7 },
-      { id: 'design', name: 'Design Inspiration', type: 'rss', unread: 0 },
-      { id: 'bookmarks', name: 'Bookmarks', type: 'bookmark', unread: 0 }
+      {id: 'all', name: 'All Feeds', type: 'all', unread: 12},
+      {id: 'bookmarks', name: 'Bookmarks', type: 'bookmark', unread: 0}
     ],
-    feedItems: [
-      {
-        id: '1',
-        sourceId: 'tech',
-        sourceName: 'Tech News',
-        sourceType: 'rss',
-        title: 'Bun v1.2 Released with Improved Node Compatibility',
-        summary: 'The latest version of Bun brings better Node.js compatibility and performance improvements.',
-        date: new Date(2023, 4, 15),
-        read: false,
-        bookmarked: false,
-        link: 'https://bun.sh'
-      },
-      {
-        id: '2',
-        sourceId: 'tech',
-        sourceName: 'Tech News',
-        sourceType: 'rss',
-        title: 'Vue 3.3 Introduces New Composition API Features',
-        summary: 'The latest Vue update brings improvements to the Composition API and better TypeScript integration.',
-        date: new Date(2023, 4, 10),
-        read: true,
-        bookmarked: true,
-        link: 'https://vuejs.org'
-      },
-      {
-        id: '3',
-        sourceId: 'dev',
-        sourceName: 'Dev Community',
-        sourceType: 'discord',
-        title: 'Weekly Code Challenge: Build a RSS Reader',
-        summary: 'Join our weekly code challenge and build a RSS reader application using your favorite tech stack.',
-        date: new Date(2023, 4, 12),
-        read: false,
-        bookmarked: false,
-        link: 'https://discord.com'
-      },
-      {
-        id: '4',
-        sourceId: 'dev',
-        sourceName: 'Dev Community',
-        sourceType: 'discord',
-        title: 'Live Coding Session: Desktop Apps with Vue',
-        summary: 'Join us for a live coding session where we build desktop applications using Vue and Electron.',
-        date: new Date(2023, 4, 8),
-        read: false,
-        bookmarked: false,
-        link: 'https://discord.com'
-      },
-      {
-        id: '5',
-        sourceId: 'design',
-        sourceName: 'Design Inspiration',
-        sourceType: 'rss',
-        title: 'Minimalist UI Design Trends for 2023',
-        summary: 'Explore the latest minimalist UI design trends that are dominating the digital landscape in 2023.',
-        date: new Date(2023, 4, 5),
-        read: true,
-        bookmarked: false,
-        link: 'https://example.com'
-      }
-    ],
+    feedItems: [],
     selectedSource: 'all',
     selectedItem: null,
     searchQuery: '',
@@ -136,6 +88,7 @@ export const useFeedStore = defineStore('feed', {
       if (item) {
         item.read = true
         this.updateUnreadCounts()
+        this.save()
       }
     },
 
@@ -146,6 +99,7 @@ export const useFeedStore = defineStore('feed', {
         }
       })
       this.updateUnreadCounts()
+      this.save()
     },
 
     toggleBookmark(id) {
@@ -153,6 +107,7 @@ export const useFeedStore = defineStore('feed', {
       if (item) {
         item.bookmarked = !item.bookmarked
         this.updateBookmarksCount()
+        this.save()
       }
     },
 
@@ -178,37 +133,53 @@ export const useFeedStore = defineStore('feed', {
     async addFeed(url) {
       const newId = `feed-${Date.now()}`
 
-      const data = await fetch("/api/rss?url="+url);
+      const data = await fetch("/api/rss?url=" + url);
 
       const xmlText = await data.text();
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlText, "application/xml");
       const name = xmlDoc.querySelector("channel > title")?.textContent || "Unnamed Feed";
 
-      const items = Array.from(xmlDoc.querySelectorAll("item")).map(item => ({
-        id: `item-${Date.now()}-${Math.random()}`,
-        sourceId: newId,
-        sourceName: name,
-        sourceType: "rss",
-        title: item.querySelector("title")?.textContent || "",
-        summary: item.querySelector("description")?.textContent || "",
-        date: new Date(item.querySelector("pubDate")?.textContent || Date.now()),
-        read: false,
-        bookmarked: false,
-        link: item.querySelector("link")?.textContent || ""
-      }));
+      let source = {
+        id: newId,
+        name,
+        type: "rss",
+        url
+      }
 
+      const items = convertItemsFromXml(xmlDoc, source);
+
+      source.unread = items.length;
 
       this.feedItems.push(...items);
       this.updateUnreadCounts();
 
-      this.feedSources.push({
-        id: newId,
-        name,
-        type: "rss",
-        unread: items.length
-      })
+      this.feedSources.push(source);
+      this.save();
+    },
 
+    async refreshFeedItems() {
+      const sources = this.feedSources.filter(source => source.type === "rss");
+
+      for (const source of sources) {
+        try {
+          const data = await fetch(`/api/rss?url=${source.url}`);
+          const xmlText = await data.text();
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+
+          let items = convertItemsFromXml(xmlDoc, source);
+          console.log(JSON.stringify(items));
+
+          items = items.filter(e => this.feedItems.some(fi => fi.id === e))
+          this.feedItems.push(...items);
+        } catch (e) {
+          console.error(e);
+        }
+
+      }
+      this.updateUnreadCounts();
+      this.save();
     },
 
     selectItem(item) {
@@ -218,6 +189,26 @@ export const useFeedStore = defineStore('feed', {
 
     clearSelectedItem() {
       this.selectedItem = null
+    },
+
+    save() {
+      localStorage.setItem('feedSources', JSON.stringify(this.feedSources));
+      localStorage.setItem('feedItems', JSON.stringify(this.feedItems));
+    },
+
+    load() {
+      const storedFeedSources = localStorage.getItem('feedSources');
+      const storedFeedItems = localStorage.getItem('feedItems');
+
+      if (storedFeedSources) {
+        this.feedSources = JSON.parse(storedFeedSources);
+      }
+
+      if (storedFeedItems) {
+        this.feedItems = JSON.parse(storedFeedItems);
+      }
+
+      this.updateUnreadCounts();
     }
   }
 })
