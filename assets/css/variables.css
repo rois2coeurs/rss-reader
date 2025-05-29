@@ -1,0 +1,15 @@
+:root {
+  --primary: #4f46e5;
+  --primary-light: #6366f1;
+  --primary-dark: #4338ca;
+  --background: #f9fafb;
+  --sidebar-bg: #ffffff;
+  --card-bg: #ffffff;
+  --text: #1f2937;
+  --text-light: #6b7280;
+  --border: #e5e7eb;
+  --hover: #f3f4f6;
+  --unread: #ecfdf5;
+  --unread-border: #10b981;
+  --reading-bg: #f8fafc;
+}
