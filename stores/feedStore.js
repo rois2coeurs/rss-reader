@@ -2,13 +2,13 @@ import {defineStore} from 'pinia'
 
 function convertItemsFromXml(xmlDoc, source) {
   let items = Array.from(xmlDoc.querySelectorAll("item")).map(item => ({
-    id: `${source.id}-${item.querySelector("guid")?.textContent || Date.now() + '-' + Math.random()}`,
-    sourceId: source.id,
-    sourceName: source.name,
-    sourceType: "rss",
-    title: item.querySelector("title")?.textContent || "",
-    summary: item.querySelector("description")?.textContent || "",
-    date: new Date(item.querySelector("pubDate")?.textContent || Date.now()),
+          id: `${source.id}-${item.querySelector("guid")?.textContent || Date.now() + '-' + Math.random()}`,
+        sourceId: source.id,
+        sourceName: source.name,
+        sourceType: "rss",
+        title: item.querySelector("title")?.textContent || "",
+        summary: item.getElementsByTagName("content:encoded")[0]?.textContent || item.querySelector("description")?.textContent || "",
+        date: new Date(item.querySelector("pubDate")?.textContent || Date.now()),
     read: false,
     bookmarked: false,
     link: item.querySelector("link")?.textContent || ""

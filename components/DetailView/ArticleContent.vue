@@ -15,7 +15,7 @@
     <h1 class="detail-title">{{ feedStore.selectedItem.title }}</h1>
 
     <div class="detail-body">
-      <div v-html="sanitizeHtmlContent(feedStore.selectedItem.summary)"></div>
+      <div class="sanitized-content" v-html="sanitizeHtmlContent(feedStore.selectedItem.summary)"></div>
     </div>
   </div>
 </template>
@@ -25,7 +25,6 @@ import { Rss, MessageCircle, Globe } from 'lucide-vue-next'
 import { useFeedStore } from '~/stores/feedStore'
 import { useUiStore } from '~/stores/uiStore'
 import { useFormatDate } from '~/composables/useFormatDate'
-import { computed } from 'vue'
 import DOMPurify from 'dompurify';
 
 
@@ -36,17 +35,6 @@ const { formatDate } = useFormatDate()
 function sanitizeHtmlContent(content) {
   return DOMPurify.sanitize(content);
 }
-
-const sourceTypeIcon = computed(() => {
-  switch (feedStore.selectedItem.sourceType) {
-    case 'rss':
-      return 'rss'
-    case 'discord':
-      return 'discord'
-    default:
-      return 'globe'
-  }
-})
 </script>
 
 <style scoped>
@@ -173,9 +161,27 @@ const sourceTypeIcon = computed(() => {
   font-size: 1.25rem;
 }
 
-.mock-content {
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--border);
+::v-deep(.sanitized-content pre) {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+::v-deep(.sanitized-content code) {
+  background-color: #f5f5f5;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9rem;
+  color: #d63384;
+}
+
+::v-deep(.sanitized-content ul) {
+  padding-left: 2rem;
 }
 </style>
