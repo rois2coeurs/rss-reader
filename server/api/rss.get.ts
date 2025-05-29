@@ -1,5 +1,6 @@
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<string> => {
   const query = getQuery(event);
-  const data = await fetch(query.url);
-  return await data.text();
-})
+  return await $fetch<string>(query.url, {
+    headers: {'Cache-Control': 'no-cache'}
+  });
+});

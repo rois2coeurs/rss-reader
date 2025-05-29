@@ -169,10 +169,10 @@ export const useFeedStore = defineStore('feed', {
           const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
           let items = convertItemsFromXml(xmlDoc, source);
-          console.log(JSON.stringify(items));
 
-          items = items.filter(e => this.feedItems.some(fi => fi.id === e))
-          this.feedItems.push(...items);
+          items = items.filter(e => !this.feedItems.some(fi => fi.id === e.id))
+          items.push(...this.feedItems);
+          this.feedItems = items;
         } catch (e) {
           console.error(e);
         }
